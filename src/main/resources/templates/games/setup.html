@@ -2,141 +2,334 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Colocación de barcos</title>
-    <meta http-equiv="refresh" content="8" th:if="${board.ready}">    <style>
-        body { font-family: Arial, sans-serif; margin: 30px; background: #f5f6fa; }
-        .container { max-width: 1000px; margin: auto; }
-        .card { background: white; padding: 24px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.08); margin-bottom: 20px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .field { margin-bottom: 12px; }
-        label { display: block; font-weight: bold; margin-bottom: 4px; }
-        input, select { width: 100%; padding: 8px; box-sizing: border-box; }
-        .error { background: #f8d7da; color: #842029; padding: 10px; border-radius: 6px; margin-bottom: 15px; }
-        .ok { color: green; font-weight: bold; }
-        .waiting { color: #b26a00; font-weight: bold; }
-        button { padding: 10px 16px; border: none; border-radius: 6px; background: #0d6efd; color: white; cursor: pointer; }
+    <title>Preparación de partida</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #f4f6fb; color: #222; }
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        .card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.08); margin-bottom: 20px; }
+        .layout { display: grid; grid-template-columns: 420px 1fr; gap: 24px; }
+        .board { display: grid; grid-template-columns: repeat(10, 38px); gap: 4px; margin-top: 10px; }
+        .cell {
+            width: 38px; height: 38px; border-radius: 6px; border: 1px solid #cfd8e3;
+            display: flex; align-items: center; justify-content: center;
+            background: #eef3f8; cursor: pointer; user-select: none;
+            font-size: 12px;
+        }
+        .cell.ship { background: #0d6efd; color: white; }
+        .cell.preview { background: #8ec5ff; }
+        .cell.invalid { background: #f8b4b4; }
+        .ships { display: flex; flex-wrap: wrap; gap: 10px; margin: 15px 0; }
+        .ship-btn {
+            padding: 10px 12px; border-radius: 8px; border: 1px solid #cfd8e3;
+            background: white; cursor: pointer;
+        }
+        .ship-btn.selected { background: #0d6efd; color: white; }
+        .ship-btn.used { opacity: .5; text-decoration: line-through; }
+        .controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .status-ok { color: #198754; font-weight: bold; }
+        .status-wait { color: #a66b00; font-weight: bold; }
+        .message { padding: 10px 12px; border-radius: 8px; margin-top: 12px; background: #eef3f8; }
+        .error { background: #f8d7da; color: #842029; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
+        button { padding: 10px 16px; border: none; border-radius: 8px; cursor: pointer; }
+        .primary { background: #0d6efd; color: white; }
+        .secondary { background: #e9ecef; color: #222; }
+        ul { padding-left: 18px; }
     </style>
 </head>
 <body>
 <div class="container">
 
     <div class="card">
-        <h1>Preparación de la partida</h1>
+        <h1>Preparación de partida</h1>
         <p><strong>Partida:</strong> <span th:text="${game.name}"></span></p>
         <p><strong>Código:</strong> <span th:text="${game.code}"></span></p>
         <p><strong>Estado:</strong> <span th:text="${game.status}"></span></p>
+        <div id="liveMessage" class="message">Conectando al canal en tiempo real...</div>
     </div>
 
-    <div class="card">
-        <h2>Estado de los jugadores</h2>
-        <div th:each="b : ${boards}">
-            <p>
-                <strong th:text="${b.player.name}"></strong>:
-                <span th:if="${b.ready}" class="ok">Listo</span>
-                <span th:unless="${b.ready}" class="waiting">Pendiente de colocar barcos</span>
-            </p>
-        </div>
-    </div>
-
-    <div class="card">
-        <h2>Colocar flota</h2>
-
-        <div th:if="${error}" class="error" th:text="${error}"></div>
-
-        <form th:action="@{/games/{gameId}/setup(gameId=${game.id})}" th:object="${placementDto}" method="post">
-            <div class="grid">
-
-                <div>
-                    <h3>Barco grande (4)</h3>
-                    <div class="field">
-                        <label>Fila</label>
-                        <input type="number" th:field="*{largeRow}" min="0" max="9">
-                    </div>
-                    <div class="field">
-                        <label>Columna</label>
-                        <input type="number" th:field="*{largeCol}" min="0" max="9">
-                    </div>
-                    <div class="field">
-                        <label>Orientación</label>
-                        <select th:field="*{largeOrientation}">
-                            <option value="HORIZONTAL">Horizontal</option>
-                            <option value="VERTICAL">Vertical</option>
-                        </select>
-                    </div>
-
-                    <h3>Barco mediano 1 (2)</h3>
-                    <div class="field">
-                        <label>Fila</label>
-                        <input type="number" th:field="*{medium1Row}" min="0" max="9">
-                    </div>
-                    <div class="field">
-                        <label>Columna</label>
-                        <input type="number" th:field="*{medium1Col}" min="0" max="9">
-                    </div>
-                    <div class="field">
-                        <label>Orientación</label>
-                        <select th:field="*{medium1Orientation}">
-                            <option value="HORIZONTAL">Horizontal</option>
-                            <option value="VERTICAL">Vertical</option>
-                        </select>
-                    </div>
-
-                    <h3>Barco mediano 2 (2)</h3>
-                    <div class="field">
-                        <label>Fila</label>
-                        <input type="number" th:field="*{medium2Row}" min="0" max="9">
-                    </div>
-                    <div class="field">
-                        <label>Columna</label>
-                        <input type="number" th:field="*{medium2Col}" min="0" max="9">
-                    </div>
-                    <div class="field">
-                        <label>Orientación</label>
-                        <select th:field="*{medium2Orientation}">
-                            <option value="HORIZONTAL">Horizontal</option>
-                            <option value="VERTICAL">Vertical</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div>
-                    <h3>Barco pequeño 1 (1)</h3>
-                    <div class="field">
-                        <label>Fila</label>
-                        <input type="number" th:field="*{small1Row}" min="0" max="9">
-                    </div>
-                    <div class="field">
-                        <label>Columna</label>
-                        <input type="number" th:field="*{small1Col}" min="0" max="9">
-                    </div>
-
-                    <h3>Barco pequeño 2 (1)</h3>
-                    <div class="field">
-                        <label>Fila</label>
-                        <input type="number" th:field="*{small2Row}" min="0" max="9">
-                    </div>
-                    <div class="field">
-                        <label>Columna</label>
-                        <input type="number" th:field="*{small2Col}" min="0" max="9">
-                    </div>
-
-                    <h3>Barco pequeño 3 (1)</h3>
-                    <div class="field">
-                        <label>Fila</label>
-                        <input type="number" th:field="*{small3Row}" min="0" max="9">
-                    </div>
-                    <div class="field">
-                        <label>Columna</label>
-                        <input type="number" th:field="*{small3Col}" min="0" max="9">
-                    </div>
-                </div>
-
+    <div class="layout">
+        <div class="card">
+            <h2>Tu tablero</h2>
+            <p th:if="${board.ready}" class="status-ok">Tu tablero ya está guardado. Esperando al otro jugador...</p>
+            <p th:unless="${board.ready}" class="status-wait">Aún no has guardado tu flota.</p>
+            <div class="controls">
+                <label>
+                    Orientación:
+                    <select id="orientation">
+                        <option value="HORIZONTAL">Horizontal</option>
+                        <option value="VERTICAL">Vertical</option>
+                    </select>
+                </label>
+                <button type="button" class="secondary" id="clearBoardBtn">Limpiar tablero</button>
             </div>
 
-            <button type="submit">Guardar colocación</button>
-        </form>
-    </div>
+            <div class="ships" id="shipSelector"></div>
 
+            <div class="board" id="board"></div>
+
+            <form th:action="@{/games/{gameId}/setup(gameId=${game.id})}" method="post" id="setupForm" style="margin-top:16px;">
+                <input type="hidden" name="shipsJson" id="shipsJson">
+                <button type="submit" class="primary" id="saveBtn">Guardar colocación</button>
+            </form>
+
+            <div th:if="${error}" class="error" th:text="${error}"></div>
+        </div>
+
+        <div class="card">
+            <h2>Estado de jugadores</h2>
+            <div id="playersStatus">
+                <div th:each="b : ${boards}">
+                    <p th:attr="data-player-id=${b.player.id}">
+                        <strong th:text="${b.player.name}"></strong>:
+                        <span th:if="${b.ready}" class="status-ok player-state">Listo</span>
+                        <span th:unless="${b.ready}" class="status-wait player-state">Pendiente</span>
+                    </p>
+                </div>
+            </div>
+
+            <hr>
+
+            <h3>Flota obligatoria</h3>
+            <ul>
+                <li>1 barco grande de 4 celdas</li>
+                <li>2 barcos medianos de 2 celdas</li>
+                <li>3 barcos pequeños de 1 celda</li>
+            </ul>
+
+            <h3>Instrucciones</h3>
+            <ul>
+                <li>Selecciona un barco pendiente</li>
+                <li>Elige orientación si procede</li>
+                <li>Haz click en la casilla inicial</li>
+                <li>Cuando completes la flota, pulsa Guardar</li>
+            </ul>
+        </div>
+    </div>
 </div>
+
+<script th:inline="javascript">
+    const gameId = [[${game.id}]];
+    const currentBoardReady = [[${board.ready}]];
+
+    const fleetTemplate = [
+        { id: "LARGE_1", type: "LARGE", size: 4, label: "Grande (4)" },
+        { id: "MEDIUM_1", type: "MEDIUM", size: 2, label: "Mediano 1 (2)" },
+        { id: "MEDIUM_2", type: "MEDIUM", size: 2, label: "Mediano 2 (2)" },
+        { id: "SMALL_1", type: "SMALL", size: 1, label: "Pequeño 1 (1)" },
+        { id: "SMALL_2", type: "SMALL", size: 1, label: "Pequeño 2 (1)" },
+        { id: "SMALL_3", type: "SMALL", size: 1, label: "Pequeño 3 (1)" }
+    ];
+
+    let selectedShipId = null;
+    let placements = [];
+
+    const boardEl = document.getElementById("board");
+    const shipSelectorEl = document.getElementById("shipSelector");
+    const orientationEl = document.getElementById("orientation");
+    const shipsJsonEl = document.getElementById("shipsJson");
+    const setupFormEl = document.getElementById("setupForm");
+    const liveMessageEl = document.getElementById("liveMessage");
+    const clearBoardBtn = document.getElementById("clearBoardBtn");
+    const saveBtn = document.getElementById("saveBtn");
+
+    function renderShipSelector() {
+        shipSelectorEl.innerHTML = "";
+
+        fleetTemplate.forEach(ship => {
+            const alreadyPlaced = placements.some(p => p.id === ship.id);
+
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "ship-btn";
+            btn.textContent = ship.label;
+
+            if (selectedShipId === ship.id) btn.classList.add("selected");
+            if (alreadyPlaced) btn.classList.add("used");
+
+            btn.disabled = alreadyPlaced || currentBoardReady;
+
+            btn.addEventListener("click", () => {
+                selectedShipId = ship.id;
+                renderShipSelector();
+            });
+
+            shipSelectorEl.appendChild(btn);
+        });
+    }
+
+    function renderBoard() {
+        boardEl.innerHTML = "";
+
+        for (let row = 0; row < 10; row++) {
+            for (let col = 0; col < 10; col++) {
+                const cell = document.createElement("div");
+                cell.className = "cell";
+                cell.dataset.row = row;
+                cell.dataset.col = col;
+                cell.textContent = row + "," + col;
+
+                const occupied = placements.some(p => shipOccupiesCell(p, row, col));
+                if (occupied) {
+                    cell.classList.add("ship");
+                    cell.textContent = "";
+                }
+
+                if (!currentBoardReady) {
+                    cell.addEventListener("click", () => placeSelectedShip(row, col));
+                }
+
+                boardEl.appendChild(cell);
+            }
+        }
+    }
+
+    function shipOccupiesCell(placement, row, col) {
+        const size = getShipSize(placement.type);
+
+        for (let i = 0; i < size; i++) {
+            const r = placement.orientation === "VERTICAL" ? placement.row + i : placement.row;
+            const c = placement.orientation === "HORIZONTAL" ? placement.col + i : placement.col;
+
+            if (r === row && c === col) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function getShipSize(type) {
+        if (type === "LARGE") return 4;
+        if (type === "MEDIUM") return 2;
+        return 1;
+    }
+
+    function placeSelectedShip(row, col) {
+        if (!selectedShipId) {
+            setLiveMessage("Selecciona primero un barco pendiente.");
+            return;
+        }
+
+        const ship = fleetTemplate.find(s => s.id === selectedShipId);
+        const orientation = ship.size === 1 ? "HORIZONTAL" : orientationEl.value;
+
+        const candidate = {
+            id: ship.id,
+            type: ship.type,
+            row,
+            col,
+            orientation
+        };
+
+        if (!isValidPlacement(candidate)) {
+            setLiveMessage("Ese barco no cabe o se solapa con otro.");
+            return;
+        }
+
+        placements.push(candidate);
+        selectedShipId = null;
+        renderShipSelector();
+        renderBoard();
+        setLiveMessage("Barco colocado correctamente.");
+    }
+
+    function isValidPlacement(candidate) {
+        const size = getShipSize(candidate.type);
+
+        for (let i = 0; i < size; i++) {
+            const r = candidate.orientation === "VERTICAL" ? candidate.row + i : candidate.row;
+            const c = candidate.orientation === "HORIZONTAL" ? candidate.col + i : candidate.col;
+
+            if (r < 0 || r > 9 || c < 0 || c > 9) {
+                return false;
+            }
+
+            const collision = placements.some(existing => shipOccupiesCell(existing, r, c));
+            if (collision) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    function setLiveMessage(text) {
+        liveMessageEl.textContent = text;
+    }
+
+    clearBoardBtn.addEventListener("click", () => {
+        if (currentBoardReady) return;
+        placements = [];
+        selectedShipId = null;
+        renderShipSelector();
+        renderBoard();
+        setLiveMessage("Tablero limpiado.");
+    });
+
+    setupFormEl.addEventListener("submit", (e) => {
+        if (currentBoardReady) {
+            e.preventDefault();
+            return;
+        }
+
+        if (placements.length !== 6) {
+            e.preventDefault();
+            setLiveMessage("Debes colocar los 6 barcos antes de guardar.");
+            return;
+        }
+
+        const payload = {
+            ships: placements.map(p => ({
+                type: p.type,
+                row: p.row,
+                col: p.col,
+                orientation: p.orientation
+            }))
+        };
+
+        shipsJsonEl.value = JSON.stringify(payload);
+    });
+
+    renderShipSelector();
+    renderBoard();
+
+    const socket = new SockJS('/ws');
+    const stompClient = Stomp.over(socket);
+
+    stompClient.connect({}, function () {
+        setLiveMessage("Conectado. Esperando cambios del rival...");
+
+        stompClient.subscribe('/topic/game/' + gameId, function (message) {
+            const data = JSON.parse(message.body);
+
+            if (data.type === 'PLAYER_READY') {
+                setLiveMessage(data.content);
+                updatePlayerReadyState(data.playerId);
+            }
+
+            if (data.type === 'GAME_START') {
+                setLiveMessage("Los dos jugadores están listos. Entrando en la partida...");
+                window.location.href = '/games/' + gameId + '/play';
+            }
+        });
+    }, function () {
+        setLiveMessage("No se pudo conectar al canal en tiempo real.");
+    });
+
+    function updatePlayerReadyState(playerId) {
+        const row = document.querySelector('[data-player-id="' + playerId + '"]');
+        if (!row) return;
+
+        const state = row.querySelector('.player-state');
+        if (!state) return;
+
+        state.textContent = 'Listo';
+        state.className = 'status-ok player-state';
+    }
+</script>
 </body>
 </html>
