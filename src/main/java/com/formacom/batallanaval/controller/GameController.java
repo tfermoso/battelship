@@ -2,6 +2,7 @@ package com.formacom.batallanaval.controller;
 
 import com.formacom.batallanaval.dto.CreateGameDto;
 import com.formacom.batallanaval.model.Game;
+import com.formacom.batallanaval.model.GameStatus;
 import com.formacom.batallanaval.model.User;
 import com.formacom.batallanaval.service.GameService;
 import com.formacom.batallanaval.service.UserService;
@@ -79,11 +80,34 @@ public class GameController {
         if (!isPlayer1 && !isPlayer2) {
             return "redirect:/games";
         }
+        if (game.getStatus() == GameStatus.PREPARING) {
+            return "redirect:/games/" + id + "/setup";
+        }
+        if (game.getStatus() == GameStatus.IN_PROGRESS) {
+            return "redirect:/games/" + id + "/play";
+        }
 
         model.addAttribute("game", game);
         model.addAttribute("isPlayer1", isPlayer1);
         model.addAttribute("isPlayer2", isPlayer2);
 
         return "games/waiting";
+    }
+    @GetMapping("/{id}/play")
+    public String playPlaceholder(@PathVariable Long id,
+                                  Authentication authentication,
+                                  Model model) {
+        Game game = gameService.findById(id);
+        User user = userService.findByEmail(authentication.getName());
+
+        boolean isPlayer1 = game.getPlayer1() != null && game.getPlayer1().getId().equals(user.getId());
+        boolean isPlayer2 = game.getPlayer2() != null && game.getPlayer2().getId().equals(user.getId());
+
+        if (!isPlayer1 && !isPlayer2) {
+            return "redirect:/games";
+        }
+
+        model.addAttribute("game", game);
+        return "games/play";
     }
 }

@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Partida en juego</title>
+</head>
+<body>
+<h1>La partida ya ha comenzado</h1>
+<p><strong>Partida:</strong> <span th:text="${game.name}"></span></p>
+<p><strong>Estado:</strong> <span th:text="${game.status}"></span></p>
+<p>Siguiente bloque: disparos, turnos y temporizador.</p>
+</body>
+</html>

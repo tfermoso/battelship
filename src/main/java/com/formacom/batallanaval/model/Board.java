@@ -27,4 +27,7 @@ public class Board {
 
     @Column(nullable = false)
     private Integer size; // por ejemplo 10
+
+    @Column(nullable = false)
+    private Boolean ready = false;
 }

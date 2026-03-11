@@ -1,9 +1,11 @@
 package com.formacom.batallanaval.service;
 
 import com.formacom.batallanaval.dto.CreateGameDto;
+import com.formacom.batallanaval.model.Board;
 import com.formacom.batallanaval.model.Game;
 import com.formacom.batallanaval.model.GameStatus;
 import com.formacom.batallanaval.model.User;
+import com.formacom.batallanaval.repository.BoardRepository;
 import com.formacom.batallanaval.repository.GameRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,6 +19,7 @@ import java.util.UUID;
 public class GameService {
 
     private final GameRepository gameRepository;
+    private final BoardRepository boardRepository;
 
     public List<Game> findAvailableGames() {
         return gameRepository.findByStatus(GameStatus.WAITING);
@@ -56,8 +59,35 @@ public class GameService {
 
         game.setPlayer2(player2);
         game.setStatus(GameStatus.PREPARING);
+        game = gameRepository.save(game);
 
-        return gameRepository.save(game);
+        createBoardsForGame(game);
+
+        return game;
+    }
+
+    public void markGameAsInProgress(Game game) {
+        game.setStatus(GameStatus.IN_PROGRESS);
+        gameRepository.save(game);
+    }
+
+    private void createBoardsForGame(Game game) {
+        Board board1 = Board.builder()
+                .game(game)
+                .player(game.getPlayer1())
+                .size(10)
+                .ready(false)
+                .build();
+
+        Board board2 = Board.builder()
+                .game(game)
+                .player(game.getPlayer2())
+                .size(10)
+                .ready(false)
+                .build();
+
+        boardRepository.save(board1);
+        boardRepository.save(board2);
     }
 
     private String generateCode() {
