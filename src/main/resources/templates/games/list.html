@@ -3,12 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <title>Partidas</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; background: #f5f6fa; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .btn { padding: 10px 14px; text-decoration: none; border-radius: 6px; border: none; cursor: pointer; }
+        .btn-primary { background: #0d6efd; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-success { background: #198754; color: white; }
+        .card { background: white; padding: 20px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+        .error { background: #f8d7da; color: #842029; padding: 10px; border-radius: 6px; margin-bottom: 20px; }
+    </style>
 </head>
 <body>
-<h1>Zona privada - Lista de partidas</h1>
 
-<form th:action="@{/logout}" method="post">
-    <button type="submit">Cerrar sesión</button>
-</form>
+<div class="topbar">
+    <h1>Lista de partidas</h1>
+    <div>
+        <a th:href="@{/games/create}" class="btn btn-primary">Crear partida</a>
+        <form th:action="@{/logout}" method="post" style="display:inline;">
+            <button type="submit" class="btn btn-secondary">Cerrar sesión</button>
+        </form>
+    </div>
+</div>
+
+<div th:if="${error}" class="error" th:text="${error}"></div>
+
+<div th:if="${#lists.isEmpty(games)}">
+    <p>No hay partidas disponibles en este momento.</p>
+</div>
+
+<div th:each="game : ${games}" class="card">
+    <h3 th:text="${game.name}">Nombre de partida</h3>
+    <p><strong>Código:</strong> <span th:text="${game.code}"></span></p>
+    <p><strong>Creador:</strong> <span th:text="${game.player1.name}"></span></p>
+    <p><strong>Estado:</strong> <span th:text="${game.status}"></span></p>
+
+    <form th:action="@{/games/{id}/join(id=${game.id})}" method="post">
+        <button type="submit" class="btn btn-success">Unirse</button>
+    </form>
+</div>
+
 </body>
 </html>

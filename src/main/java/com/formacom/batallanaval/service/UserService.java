@@ -6,6 +6,7 @@ import com.formacom.batallanaval.model.Role;
 import com.formacom.batallanaval.model.User;
 import com.formacom.batallanaval.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -29,5 +30,9 @@ public class UserService {
                 .build();
 
         userRepository.save(user);
+    }
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
     }
 }

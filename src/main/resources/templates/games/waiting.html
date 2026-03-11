@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Sala de espera</title>
+  <meta http-equiv="refresh" content="5">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 30px; background: #f5f6fa; }
+    .card { max-width: 700px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .badge { display: inline-block; padding: 6px 10px; border-radius: 20px; background: #e9ecef; margin-left: 10px; }
+    .ok { color: green; font-weight: bold; }
+    .waiting { color: #b26a00; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Sala de espera</h1>
+
+  <p><strong>Partida:</strong> <span th:text="${game.name}"></span></p>
+  <p><strong>Código:</strong> <span th:text="${game.code}"></span></p>
+  <p>
+    <strong>Estado:</strong>
+    <span class="badge" th:text="${game.status}"></span>
+  </p>
+
+  <hr>
+
+  <h3>Jugadores</h3>
+
+  <p>
+    <strong>Jugador 1:</strong>
+    <span th:text="${game.player1.name}"></span>
+    <span th:if="${isPlayer1}" class="ok">(Tú)</span>
+  </p>
+
+  <p>
+    <strong>Jugador 2:</strong>
+    <span th:if="${game.player2 != null}" th:text="${game.player2.name}"></span>
+    <span th:if="${game.player2 == null}" class="waiting">Esperando jugador...</span>
+    <span th:if="${isPlayer2}" class="ok">(Tú)</span>
+  </p>
+
+  <hr>
+
+  <div th:if="${game.player2 == null}">
+    <p class="waiting">La partida todavía no está completa. Esta página se actualiza automáticamente.</p>
+  </div>
+
+  <div th:if="${game.player2 != null}">
+    <p class="ok">La partida ya tiene dos jugadores. El siguiente paso será la colocación de barcos.</p>
+  </div>
+
+  <p>
+    <a th:href="@{/games}">Volver al listado</a>
+  </p>
+</div>
+
+</body>
+</html>
