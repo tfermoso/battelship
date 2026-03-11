@@ -11,13 +11,14 @@
         .btn-secondary { background: #6c757d; color: white; }
         .btn-success { background: #198754; color: white; }
         .card { background: white; padding: 20px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+        .section { margin-bottom: 35px; }
         .error { background: #f8d7da; color: #842029; padding: 10px; border-radius: 6px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
 <div class="topbar">
-    <h1>Lista de partidas</h1>
+    <h1>Lobby de partidas</h1>
     <div>
         <a th:href="@{/games/create}" class="btn btn-primary">Crear partida</a>
         <form th:action="@{/logout}" method="post" style="display:inline;">
@@ -28,19 +29,61 @@
 
 <div th:if="${error}" class="error" th:text="${error}"></div>
 
-<div th:if="${#lists.isEmpty(games)}">
-    <p>No hay partidas disponibles en este momento.</p>
+<div class="section">
+    <h2>Partidas disponibles para unirse</h2>
+    <div th:if="${#lists.isEmpty(availableGames)}">
+        <p>No hay partidas disponibles.</p>
+    </div>
+
+    <div th:each="game : ${availableGames}" class="card">
+        <h3 th:text="${game.name}"></h3>
+        <p><strong>Código:</strong> <span th:text="${game.code}"></span></p>
+        <p><strong>Creador:</strong> <span th:text="${game.player1.name}"></span></p>
+        <form th:action="@{/games/{id}/join(id=${game.id})}" method="post">
+            <button type="submit" class="btn btn-success">Unirse</button>
+        </form>
+    </div>
 </div>
 
-<div th:each="game : ${games}" class="card">
-    <h3 th:text="${game.name}">Nombre de partida</h3>
-    <p><strong>Código:</strong> <span th:text="${game.code}"></span></p>
-    <p><strong>Creador:</strong> <span th:text="${game.player1.name}"></span></p>
-    <p><strong>Estado:</strong> <span th:text="${game.status}"></span></p>
+<div class="section">
+    <h2>Mis partidas en preparación</h2>
+    <div th:if="${#lists.isEmpty(preparingGames)}">
+        <p>No tienes partidas en preparación.</p>
+    </div>
 
-    <form th:action="@{/games/{id}/join(id=${game.id})}" method="post">
-        <button type="submit" class="btn btn-success">Unirse</button>
-    </form>
+    <div th:each="game : ${preparingGames}" class="card">
+        <h3 th:text="${game.name}"></h3>
+        <p><strong>Código:</strong> <span th:text="${game.code}"></span></p>
+        <p><strong>Estado:</strong> <span th:text="${game.status}"></span></p>
+        <a th:href="@{/games/{id}/setup(id=${game.id})}" class="btn btn-primary">Continuar preparación</a>
+    </div>
+</div>
+
+<div class="section">
+    <h2>Mis partidas en juego</h2>
+    <div th:if="${#lists.isEmpty(inProgressGames)}">
+        <p>No tienes partidas en juego.</p>
+    </div>
+
+    <div th:each="game : ${inProgressGames}" class="card">
+        <h3 th:text="${game.name}"></h3>
+        <p><strong>Código:</strong> <span th:text="${game.code}"></span></p>
+        <p><strong>Estado:</strong> <span th:text="${game.status}"></span></p>
+        <a th:href="@{/games/{id}/play(id=${game.id})}" class="btn btn-primary">Entrar en partida</a>
+    </div>
+</div>
+
+<div class="section">
+    <h2>Mis partidas finalizadas</h2>
+    <div th:if="${#lists.isEmpty(finishedGames)}">
+        <p>No tienes partidas finalizadas.</p>
+    </div>
+
+    <div th:each="game : ${finishedGames}" class="card">
+        <h3 th:text="${game.name}"></h3>
+        <p><strong>Código:</strong> <span th:text="${game.code}"></span></p>
+        <p><strong>Estado:</strong> <span th:text="${game.status}"></span></p>
+    </div>
 </div>
 
 </body>

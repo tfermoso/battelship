@@ -93,4 +93,22 @@ public class GameService {
     private String generateCode() {
         return UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
+
+
+    public List<Game> findGamesForUser(User user) {
+        return gameRepository.findByPlayer1OrPlayer2(user, user);
+    }
+
+    public List<Game> findGamesForUserByStatus(User user, GameStatus status) {
+        return gameRepository.findByPlayer1OrPlayer2(user, user)
+                .stream()
+                .filter(game -> game.getStatus() == status)
+                .toList();
+    }
+    public List<Game> findJoinableGames(User user) {
+        return gameRepository.findByStatus(GameStatus.WAITING)
+                .stream()
+                .filter(game -> !game.getPlayer1().getId().equals(user.getId()))
+                .toList();
+    }
 }

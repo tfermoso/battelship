@@ -25,12 +25,21 @@ public class GameController {
     private final UserService userService;
 
     @GetMapping
-    public String listGames(Model model) {
-        List<Game> games = gameService.findAvailableGames();
-        model.addAttribute("games", games);
+    public String listGames(Model model, Authentication authentication) {
+        User user = userService.findByEmail(authentication.getName());
+
+        List<Game> availableGames = gameService.findJoinableGames(user);
+        List<Game> preparingGames = gameService.findGamesForUserByStatus(user, GameStatus.PREPARING);
+        List<Game> inProgressGames = gameService.findGamesForUserByStatus(user, GameStatus.IN_PROGRESS);
+        List<Game> finishedGames = gameService.findGamesForUserByStatus(user, GameStatus.FINISHED);
+
+        model.addAttribute("availableGames", availableGames);
+        model.addAttribute("preparingGames", preparingGames);
+        model.addAttribute("inProgressGames", inProgressGames);
+        model.addAttribute("finishedGames", finishedGames);
+
         return "games/list";
     }
-
     @GetMapping("/create")
     public String showCreateForm(Model model) {
         model.addAttribute("createGameDto", new CreateGameDto());
