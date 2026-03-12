@@ -13,4 +13,5 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
     Optional<Board> findByGameAndPlayer(Game game, User player);
 
     List<Board> findByGame(Game game);
+
 }

@@ -4,28 +4,37 @@ import com.formacom.batallanaval.dto.PlacedShipDto;
 import com.formacom.batallanaval.dto.ShipPlacementRequestDto;
 import com.formacom.batallanaval.model.*;
 import com.formacom.batallanaval.repository.BoardRepository;
+import com.formacom.batallanaval.repository.GameRepository;
 import com.formacom.batallanaval.repository.ShipPositionRepository;
 import com.formacom.batallanaval.repository.ShipRepository;
+import com.formacom.batallanaval.repository.ShotRepository;
 import com.formacom.batallanaval.websocket.GameWebSocketService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 public class BoardService {
 
     private final BoardRepository boardRepository;
+    private final GameRepository gameRepository;
     private final ShipRepository shipRepository;
     private final ShipPositionRepository shipPositionRepository;
-    private final GameService gameService;
+    private final ShotRepository shotRepository;
     private final GameWebSocketService gameWebSocketService;
 
     public Board getBoardForPlayer(Game game, User player) {
         return boardRepository.findByGameAndPlayer(game, player)
                 .orElseThrow(() -> new RuntimeException("Tablero no encontrado"));
+    }
+
+    public Board findByGameAndPlayer(Game game, User player) {
+        return getBoardForPlayer(game, player);
     }
 
     public List<Board> getBoardsForGame(Game game) {
@@ -175,8 +184,87 @@ public class BoardService {
                 boards.stream().allMatch(board -> Boolean.TRUE.equals(board.getReady()));
 
         if (allReady) {
-            gameService.markGameAsInProgress(game);
+            game.setStatus(GameStatus.IN_PROGRESS);
+            gameRepository.save(game);
             gameWebSocketService.sendGameStart(game.getId());
         }
+    }
+
+    public String[][] getBoardMatrix(Game game, User user) {
+        Board board = findByGameAndPlayer(game, user);
+        int size = board.getSize() != null ? board.getSize() : 10;
+
+        String[][] matrix = createMatrix(size, "W");
+
+        List<ShipPosition> positions = shipPositionRepository.findByBoard(board);
+        for (ShipPosition position : positions) {
+            matrix[position.getRow()][position.getCol()] = "S";
+        }
+
+        List<Shot> receivedShots = shotRepository.findByGameAndTargetBoard(game, board);
+        for (Shot shot : receivedShots) {
+            int row = shot.getRow();
+            int col = shot.getCol();
+
+            if (shot.getResult() == ShotResult.HIT || shot.getResult() == ShotResult.SUNK) {
+                matrix[row][col] = "H";
+            } else {
+                matrix[row][col] = "M";
+            }
+        }
+
+        return matrix;
+    }
+
+    public String[][] getEnemyBoardView(Game game, User user) {
+        User opponent = getOpponent(game, user);
+        Board opponentBoard = findByGameAndPlayer(game, opponent);
+        int size = opponentBoard.getSize() != null ? opponentBoard.getSize() : 10;
+
+        String[][] matrix = createMatrix(size, "?");
+
+        List<Shot> shotsMadeByUser = shotRepository.findByGameAndShooter(game, user);
+        for (Shot shot : shotsMadeByUser) {
+            int row = shot.getRow();
+            int col = shot.getCol();
+
+            if (shot.getResult() == ShotResult.HIT || shot.getResult() == ShotResult.SUNK) {
+                matrix[row][col] = "H";
+            } else {
+                matrix[row][col] = "M";
+            }
+        }
+
+        return matrix;
+    }
+
+    public boolean hasShipAt(Board targetBoard, int row, int col) {
+        return shipPositionRepository.findByBoard(targetBoard)
+                .stream()
+                .anyMatch(position -> position.getRow().equals(row) && position.getCol().equals(col));
+    }
+
+    public long countOccupiedCells(Board board) {
+        return shipPositionRepository.findByBoard(board).size();
+    }
+
+    private String[][] createMatrix(int size, String defaultValue) {
+        String[][] matrix = new String[size][size];
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                matrix[i][j] = defaultValue;
+            }
+        }
+        return matrix;
+    }
+
+    private User getOpponent(Game game, User user) {
+        if (game.getPlayer1() != null && game.getPlayer1().getId().equals(user.getId())) {
+            return game.getPlayer2();
+        }
+        if (game.getPlayer2() != null && game.getPlayer2().getId().equals(user.getId())) {
+            return game.getPlayer1();
+        }
+        throw new RuntimeException("El usuario no pertenece a la partida");
     }
 }

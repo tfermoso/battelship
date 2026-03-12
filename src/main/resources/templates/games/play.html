@@ -2,12 +2,115 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Partida en juego</title>
+    <title>Jugar partida</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .boards { display: flex; gap: 40px; flex-wrap: wrap; }
+        .board-container { min-width: 320px; }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(10, 32px);
+            gap: 2px;
+            margin-top: 10px;
+        }
+        .cell {
+            width: 32px;
+            height: 32px;
+            border: 1px solid #999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+        .water { background: #e7f3ff; }
+        .ship { background: #b0b0b0; }
+        .hit { background: #ff7b7b; }
+        .miss { background: #ffffff; }
+        .unknown { background: #dbeafe; }
+        .enemy-btn {
+            width: 32px;
+            height: 32px;
+            border: 1px solid #999;
+            cursor: pointer;
+            background: #dbeafe;
+        }
+        .enemy-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+        .msg-ok { color: green; }
+        .msg-error { color: red; }
+    </style>
 </head>
 <body>
-<h1>La partida ya ha comenzado</h1>
-<p><strong>Partida:</strong> <span th:text="${game.name}"></span></p>
+
+<h1 th:text="'Partida: ' + ${game.name}"></h1>
+
 <p><strong>Estado:</strong> <span th:text="${game.status}"></span></p>
-<p>Siguiente bloque: disparos, turnos y temporizador.</p>
+<p><strong>Rival:</strong> <span th:text="${opponent.name}"></span></p>
+
+<p th:if="${winner != null}">
+    <strong>Ganador:</strong> <span th:text="${winner.name}"></span>
+</p>
+
+<p th:if="${winner == null}">
+    <strong>Turno:</strong>
+    <span th:text="${isMyTurn} ? 'Te toca a ti' : 'Turno del rival'"></span>
+</p>
+
+<p class="msg-ok" th:if="${success}" th:text="${success}"></p>
+<p class="msg-error" th:if="${error}" th:text="${error}"></p>
+
+<div class="boards">
+
+    <div class="board-container">
+        <h2>Tu tablero</h2>
+        <div class="board">
+            <th:block th:each="row, rowStat : ${myBoard}">
+                <th:block th:each="cell, colStat : ${row}">
+                    <div class="cell"
+                         th:classappend="${cell == 'W'} ? 'water' :
+                                         (${cell == 'S'} ? 'ship' :
+                                         (${cell == 'H'} ? 'hit' :
+                                         (${cell == 'M'} ? 'miss' : 'unknown')) )">
+                        <span th:text="${cell}"></span>
+                    </div>
+                </th:block>
+            </th:block>
+        </div>
+    </div>
+
+    <div class="board-container">
+        <h2>Tablero enemigo</h2>
+        <div class="board">
+            <th:block th:each="row, rowStat : ${enemyBoard}">
+                <th:block th:each="cell, colStat : ${row}">
+                    <form th:if="${cell == '?' and isMyTurn and winner == null}"
+                          th:action="@{/games/{id}/play/shoot(id=${game.id})}"
+                          method="post"
+                          style="margin:0;">
+                        <input type="hidden" name="x" th:value="${rowStat.index}">
+                        <input type="hidden" name="y" th:value="${colStat.index}">
+                        <button type="submit" class="enemy-btn">?</button>
+                    </form>
+
+                    <div th:if="${!(cell == '?' and isMyTurn and winner == null)}"
+                         class="cell"
+                         th:classappend="${cell == '?'} ? 'unknown' :
+                                         (${cell == 'H'} ? 'hit' :
+                                         (${cell == 'M'} ? 'miss' : 'unknown'))">
+                        <span th:text="${cell}"></span>
+                    </div>
+                </th:block>
+            </th:block>
+        </div>
+    </div>
+
+</div>
+
+<p style="margin-top: 20px;">
+    <a th:href="@{/games}">Volver al listado</a>
+</p>
+
 </body>
 </html>

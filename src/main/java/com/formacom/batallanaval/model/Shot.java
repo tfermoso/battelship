@@ -29,7 +29,8 @@ public class Shot {
     private Integer col;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(
+            nullable = false, length = 20)
     private ShotResult result;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -46,4 +47,8 @@ public class Shot {
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
+
+    public boolean getHit() {
+    return true;
+    }
 }
