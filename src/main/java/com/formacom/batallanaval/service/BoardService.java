@@ -197,25 +197,28 @@ public class BoardService {
         String[][] matrix = createMatrix(size, "W");
 
         List<ShipPosition> positions = shipPositionRepository.findByBoard(board);
+
         for (ShipPosition position : positions) {
-            matrix[position.getRow()][position.getCol()] = "S";
+            Ship ship = position.getShip();
+
+            if (Boolean.TRUE.equals(ship.getSunk())) {
+                matrix[position.getRow()][position.getCol()] = "X";
+            } else if (Boolean.TRUE.equals(position.getHit())) {
+                matrix[position.getRow()][position.getCol()] = "H";
+            } else {
+                matrix[position.getRow()][position.getCol()] = "S";
+            }
         }
 
         List<Shot> receivedShots = shotRepository.findByGameAndTargetBoard(game, board);
         for (Shot shot : receivedShots) {
-            int row = shot.getRow();
-            int col = shot.getCol();
-
-            if (shot.getResult() == ShotResult.HIT || shot.getResult() == ShotResult.SUNK) {
-                matrix[row][col] = "H";
-            } else {
-                matrix[row][col] = "M";
+            if (shot.getResult() == ShotResult.WATER) {
+                matrix[shot.getRow()][shot.getCol()] = "M";
             }
         }
 
         return matrix;
     }
-
     public String[][] getEnemyBoardView(Game game, User user) {
         User opponent = getOpponent(game, user);
         Board opponentBoard = findByGameAndPlayer(game, opponent);
@@ -228,16 +231,23 @@ public class BoardService {
             int row = shot.getRow();
             int col = shot.getCol();
 
-            if (shot.getResult() == ShotResult.HIT || shot.getResult() == ShotResult.SUNK) {
-                matrix[row][col] = "H";
-            } else {
+            if (shot.getResult() == ShotResult.WATER) {
                 matrix[row][col] = "M";
+            } else {
+                matrix[row][col] = "H";
+            }
+        }
+
+        List<ShipPosition> opponentPositions = shipPositionRepository.findByBoard(opponentBoard);
+        for (ShipPosition position : opponentPositions) {
+            Ship ship = position.getShip();
+            if (Boolean.TRUE.equals(ship.getSunk())) {
+                matrix[position.getRow()][position.getCol()] = "X";
             }
         }
 
         return matrix;
     }
-
     public boolean hasShipAt(Board targetBoard, int row, int col) {
         return shipPositionRepository.findByBoard(targetBoard)
                 .stream()
@@ -266,5 +276,45 @@ public class BoardService {
             return game.getPlayer1();
         }
         throw new RuntimeException("El usuario no pertenece a la partida");
+    }
+    public ShipPosition findShipPosition(Board board, int row, int col) {
+        return shipPositionRepository.findByBoard(board)
+                .stream()
+                .filter(position -> position.getRow().equals(row) && position.getCol().equals(col))
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Transactional
+    public ShotResult registerShotResult(Board board, int row, int col) {
+        ShipPosition targetPosition = shipPositionRepository.findByBoard(board)
+                .stream()
+                .filter(position -> position.getRow().equals(row) && position.getCol().equals(col))
+                .findFirst()
+                .orElse(null);
+
+        if (targetPosition == null) {
+            return ShotResult.WATER;
+        }
+
+        targetPosition.setHit(true);
+        shipPositionRepository.save(targetPosition);
+
+        Ship ship = targetPosition.getShip();
+
+        List<ShipPosition> shipPositions = shipPositionRepository.findByBoard(board)
+                .stream()
+                .filter(position -> position.getShip().getId().equals(ship.getId()))
+                .toList();
+
+        boolean allHit = shipPositions.stream().allMatch(ShipPosition::getHit);
+
+        if (allHit) {
+            ship.setSunk(true);
+            shipRepository.save(ship);
+            return ShotResult.SUNK;
+        }
+
+        return ShotResult.HIT;
     }
 }

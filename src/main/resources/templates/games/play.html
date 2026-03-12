@@ -4,15 +4,28 @@
     <meta charset="UTF-8">
     <title>Jugar partida</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .boards { display: flex; gap: 40px; flex-wrap: wrap; }
-        .board-container { min-width: 320px; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .boards {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .board-container {
+            min-width: 320px;
+        }
+
         .board {
             display: grid;
             grid-template-columns: repeat(10, 32px);
             gap: 2px;
             margin-top: 10px;
         }
+
         .cell {
             width: 32px;
             height: 32px;
@@ -21,25 +34,64 @@
             align-items: center;
             justify-content: center;
             font-size: 14px;
+            font-weight: bold;
         }
-        .water { background: #e7f3ff; }
-        .ship { background: #b0b0b0; }
-        .hit { background: #ff7b7b; }
-        .miss { background: #ffffff; }
-        .unknown { background: #dbeafe; }
+
+        .water {
+            background: #e7f3ff;
+            color: #2b4c7e;
+        }
+
+        .ship {
+            background: #9ca3af;
+            color: #111827;
+        }
+
+        .hit {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .sunk {
+            background: #dc2626;
+            color: white;
+        }
+
+        .miss {
+            background: #ffffff;
+            color: #6b7280;
+        }
+
+        .unknown {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
         .enemy-btn {
             width: 32px;
             height: 32px;
             border: 1px solid #999;
             cursor: pointer;
             background: #dbeafe;
+            font-weight: bold;
         }
+
+        .enemy-btn:hover {
+            background: #bfdbfe;
+        }
+
         .enemy-btn:disabled {
             cursor: not-allowed;
             opacity: 0.8;
         }
-        .msg-ok { color: green; }
-        .msg-error { color: red; }
+
+        .msg-ok {
+            color: green;
+        }
+
+        .msg-error {
+            color: red;
+        }
     </style>
 </head>
 <body>
@@ -66,13 +118,15 @@
     <div class="board-container">
         <h2>Tu tablero</h2>
         <div class="board">
-            <th:block th:each="row, rowStat : ${myBoard}">
-                <th:block th:each="cell, colStat : ${row}">
+            <th:block th:each="row : ${myBoard}">
+                <th:block th:each="cell : ${row}">
                     <div class="cell"
-                         th:classappend="${cell == 'W'} ? 'water' :
-                                         (${cell == 'S'} ? 'ship' :
-                                         (${cell == 'H'} ? 'hit' :
-                                         (${cell == 'M'} ? 'miss' : 'unknown')) )">
+                         th:classappend="
+                        ${cell == 'W'} ? 'water' :
+                        (${cell == 'S'} ? 'ship' :
+                        (${cell == 'H'} ? 'hit' :
+                        (${cell == 'X'} ? 'sunk' :
+                        (${cell == 'M'} ? 'miss' : 'unknown'))))">
                         <span th:text="${cell}"></span>
                     </div>
                 </th:block>
@@ -85,6 +139,7 @@
         <div class="board">
             <th:block th:each="row, rowStat : ${enemyBoard}">
                 <th:block th:each="cell, colStat : ${row}">
+
                     <form th:if="${cell == '?' and isMyTurn and winner == null}"
                           th:action="@{/games/{id}/play/shoot(id=${game.id})}"
                           method="post"
@@ -96,11 +151,14 @@
 
                     <div th:if="${!(cell == '?' and isMyTurn and winner == null)}"
                          class="cell"
-                         th:classappend="${cell == '?'} ? 'unknown' :
-                                         (${cell == 'H'} ? 'hit' :
-                                         (${cell == 'M'} ? 'miss' : 'unknown'))">
+                         th:classappend="
+                        ${cell == '?'} ? 'unknown' :
+                        (${cell == 'H'} ? 'hit' :
+                        (${cell == 'X'} ? 'sunk' :
+                        (${cell == 'M'} ? 'miss' : 'unknown')))">
                         <span th:text="${cell}"></span>
                     </div>
+
                 </th:block>
             </th:block>
         </div>

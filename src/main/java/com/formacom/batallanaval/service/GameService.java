@@ -139,7 +139,7 @@ public class GameService {
         return shotRepository.findByGameOrderByCreatedAtAsc(game);
     }
 
-    public void shoot(Game game, User shooter, int row, int col) {
+    public ShotResult shoot(Game game, User shooter, int row, int col) {
         if (game.getStatus() != GameStatus.IN_PROGRESS) {
             throw new RuntimeException("La partida no está en curso");
         }
@@ -155,8 +155,7 @@ public class GameService {
             throw new RuntimeException("Ya has disparado a esa posición");
         }
 
-        boolean hit = boardService.hasShipAt(targetBoard, row, col);
-        ShotResult result = hit ? ShotResult.HIT : ShotResult.SUNK;
+        ShotResult result = boardService.registerShotResult(targetBoard, row, col);
 
         Shot shot = Shot.builder()
                 .game(game)
@@ -174,8 +173,9 @@ public class GameService {
             game.setStatus(GameStatus.FINISHED);
             gameRepository.save(game);
         }
-    }
 
+        return result;
+    }
     public boolean hasPlayerLost(Game game, User player) {
         Board board = boardService.findByGameAndPlayer(game, player);
 
