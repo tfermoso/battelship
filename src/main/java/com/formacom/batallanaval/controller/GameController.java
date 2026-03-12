@@ -3,6 +3,7 @@ package com.formacom.batallanaval.controller;
 import com.formacom.batallanaval.dto.CreateGameDto;
 import com.formacom.batallanaval.model.Game;
 import com.formacom.batallanaval.model.GameStatus;
+import com.formacom.batallanaval.model.ShotResult;
 import com.formacom.batallanaval.model.User;
 import com.formacom.batallanaval.service.BoardService;
 import com.formacom.batallanaval.service.GameService;
@@ -161,8 +162,16 @@ public class GameController {
         }
 
         try {
-            gameService.shoot(game, user, shotDto.getX(), shotDto.getY());
-            redirectAttributes.addFlashAttribute("success", "Disparo realizado");
+            ShotResult shotResult = gameService.shoot(game, user, shotDto.getX(), shotDto.getY());
+
+            if (shotResult == ShotResult.WATER) {
+                redirectAttributes.addFlashAttribute("success", "Agua");
+            } else if (shotResult == ShotResult.HIT) {
+                redirectAttributes.addFlashAttribute("success", "Tocado");
+            } else if (shotResult == ShotResult.SUNK) {
+                redirectAttributes.addFlashAttribute("success", "¡Hundido!");
+            }
+
         } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }

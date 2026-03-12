@@ -5,6 +5,7 @@ import com.formacom.batallanaval.model.*;
 import com.formacom.batallanaval.repository.BoardRepository;
 import com.formacom.batallanaval.repository.GameRepository;
 import com.formacom.batallanaval.repository.ShotRepository;
+import com.formacom.batallanaval.websocket.GameWebSocketService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +21,7 @@ public class GameService {
     private final BoardRepository boardRepository;
     private final ShotRepository shotRepository;
     private final BoardService boardService;
+    private final GameWebSocketService gameWebSocketService;
 
     public List<Game> findAvailableGames() {
         return gameRepository.findByStatus(GameStatus.WAITING);
@@ -173,6 +175,17 @@ public class GameService {
             game.setStatus(GameStatus.FINISHED);
             gameRepository.save(game);
         }
+
+        gameWebSocketService.sendShotUpdate(
+                game.getId(),
+                shooter.getId(),
+                shooter.getName(),
+                row,
+                col,
+                result.name(),
+                game.getStatus().name(),
+                getCurrentTurnPlayer(game).getId()
+        );
 
         return result;
     }
