@@ -2,40 +2,62 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Login</title>
+    <title>Iniciar sesión | Battle Naval</title>
+    <link rel="stylesheet" th:href="@{/css/auth-battleship.css}">
 </head>
 <body>
-<h1>Iniciar sesión</h1>
 
-<div th:if="${param.error}">
-    Email o contraseña incorrectos
+<div class="auth-shell">
+    <section class="hero-panel">
+        <div class="brand">
+            <span class="brand-kicker">Battle Naval System</span>
+            <h1>Inicia sesión y entra en combate</h1>
+            <p>
+                Accede a tu cuenta, prepara tu flota y desafía a otros jugadores
+                en una partida de estrategia sobre el tablero.
+            </p>
+
+            <div class="radar-box">
+                <div class="radar-sweep"></div>
+                <div class="radar-dot dot-1"></div>
+                <div class="radar-dot dot-2"></div>
+                <div class="radar-dot dot-3"></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="form-panel">
+        <h2>Iniciar sesión</h2>
+        <p class="form-subtitle">Introduce tus credenciales para desplegar tu escuadra.</p>
+
+        <div th:if="${param.error}" class="alert alert-error">
+            Usuario o contraseña incorrectos.
+        </div>
+
+        <div th:if="${param.logout}" class="alert alert-success">
+            Has cerrado sesión correctamente.
+        </div>
+
+        <form th:action="@{/login}" method="post">
+            <div class="form-group">
+                <label for="email">Correo electrónico</label>
+                <input id="email" name="email" type="email" placeholder="capitan@flota.com" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Contraseña</label>
+                <input id="password" name="password" type="password" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Entrar en batalla</button>
+        </form>
+
+        <div class="auth-links">
+            ¿No tienes cuenta?
+            <a th:href="@{/register}">Regístrate aquí</a>
+        </div>
+    </section>
 </div>
 
-<div th:if="${param.logout}">
-    Has cerrado sesión correctamente
-</div>
-
-<div th:if="${param.registered}">
-    Registro completado. Ya puedes iniciar sesión
-</div>
-
-<form th:action="@{/login}" method="post">
-    <div>
-        <label>Email:</label>
-        <input type="email" name="email">
-    </div>
-
-    <div>
-        <label>Contraseña:</label>
-        <input type="password" name="password">
-    </div>
-
-    <button type="submit">Entrar</button>
-</form>
-
-<p>
-    ¿No tienes cuenta?
-    <a th:href="@{/register}">Registrarse</a>
-</p>
 </body>
 </html>

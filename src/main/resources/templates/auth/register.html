@@ -2,36 +2,68 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Registro</title>
+    <title>Registro | Battle Naval</title>
+    <link rel="stylesheet" th:href="@{/css/auth-battleship.css}">
 </head>
 <body>
-<h1>Registro</h1>
 
-<form th:action="@{/register}" th:object="${registerUserDto}" method="post">
-    <div>
-        <label>Nombre:</label>
-        <input type="text" th:field="*{name}">
-        <div th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
-    </div>
+<div class="auth-shell">
+    <section class="hero-panel">
+        <div class="brand">
+            <span class="brand-kicker">Alta de comandante</span>
+            <h1>Únete a la flota</h1>
+            <p>
+                Crea tu cuenta para desplegar barcos, entrar en combate y desafiar
+                a otros jugadores en el tablero naval.
+            </p>
 
-    <div>
-        <label>Email:</label>
-        <input type="email" th:field="*{email}">
-        <div th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
-    </div>
+            <div class="radar-box">
+                <div class="radar-sweep"></div>
+                <div class="radar-dot dot-1"></div>
+                <div class="radar-dot dot-2"></div>
+                <div class="radar-dot dot-3"></div>
+            </div>
+        </div>
+    </section>
 
-    <div>
-        <label>Contraseña:</label>
-        <input type="password" th:field="*{password}">
-        <div th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
-    </div>
+    <section class="form-panel">
+        <h2>Registro</h2>
+        <p class="form-subtitle">Completa tus datos para entrar en batalla.</p>
 
-    <button type="submit">Registrarse</button>
-</form>
+        <form th:action="@{/register}" th:object="${registerUserDto}" method="post">
+            <div class="form-group">
+                <label for="name">Nombre</label>
+                <input id="name" type="text" th:field="*{name}" placeholder="Tu nombre">
+                <div class="field-error"
+                     th:if="${#fields.hasErrors('name')}"
+                     th:errors="*{name}"></div>
+            </div>
 
-<p>
-    ¿Ya tienes cuenta?
-    <a th:href="@{/login}">Iniciar sesión</a>
-</p>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input id="email" type="email" th:field="*{email}" placeholder="capitan@flota.com">
+                <div class="field-error"
+                     th:if="${#fields.hasErrors('email')}"
+                     th:errors="*{email}"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Contraseña</label>
+                <input id="password" type="password" th:field="*{password}" placeholder="••••••••">
+                <div class="field-error"
+                     th:if="${#fields.hasErrors('password')}"
+                     th:errors="*{password}"></div>
+            </div>
+
+            <button type="submit" class="btn btn-danger">Registrarse</button>
+        </form>
+
+        <div class="auth-links">
+            ¿Ya tienes cuenta?
+            <a th:href="@{/login}">Iniciar sesión</a>
+        </div>
+    </section>
+</div>
+
 </body>
 </html>
