@@ -36,11 +36,14 @@ public class GameController {
         List<Game> preparingGames = gameService.findGamesForUserByStatus(user, GameStatus.PREPARING);
         List<Game> inProgressGames = gameService.findGamesForUserByStatus(user, GameStatus.IN_PROGRESS);
         List<Game> finishedGames = gameService.findGamesForUserByStatus(user, GameStatus.FINISHED);
+        List<Game> waitingGames = gameService.findGamesForUserByStatus(user, GameStatus.WAITING);
 
+        model.addAttribute("loggedUser", user);
         model.addAttribute("availableGames", availableGames);
         model.addAttribute("preparingGames", preparingGames);
         model.addAttribute("inProgressGames", inProgressGames);
         model.addAttribute("finishedGames", finishedGames);
+        model.addAttribute("waitingGames", waitingGames);
 
         return "games/list";
     }

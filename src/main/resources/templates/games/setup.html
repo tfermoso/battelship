@@ -2,113 +2,360 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Preparación de partida</title>
+    <title>Preparación de partida | Battle Naval</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" th:href="@{/css/game-battleship.css}">
 
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; background: #f4f6fb; color: #222; }
-        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
-        .card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.08); margin-bottom: 20px; }
-        .layout { display: grid; grid-template-columns: 420px 1fr; gap: 24px; }
-        .board { display: grid; grid-template-columns: repeat(10, 38px); gap: 4px; margin-top: 10px; }
-        .cell {
-            width: 38px; height: 38px; border-radius: 6px; border: 1px solid #cfd8e3;
-            display: flex; align-items: center; justify-content: center;
-            background: #eef3f8; cursor: pointer; user-select: none;
-            font-size: 12px;
+        .setup-top {
+            margin-bottom: 24px;
+            padding: 22px;
+            border: 1px solid var(--panel-border);
+            border-radius: 20px;
+            background: var(--panel);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(6px);
         }
-        .cell.ship { background: #0d6efd; color: white; }
-        .cell.preview { background: #8ec5ff; }
-        .cell.invalid { background: #f8b4b4; }
-        .ships { display: flex; flex-wrap: wrap; gap: 10px; margin: 15px 0; }
+
+        .setup-top h1 {
+            margin: 0 0 12px;
+            font-size: clamp(1.9rem, 3vw, 2.4rem);
+        }
+
+        .setup-meta {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+
+        .meta-pill {
+            padding: 10px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(61, 169, 252, 0.22);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .live-box {
+            margin-top: 16px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: rgba(61, 169, 252, 0.12);
+            border: 1px solid rgba(61, 169, 252, 0.22);
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .setup-layout {
+            display: grid;
+            grid-template-columns: minmax(320px, 1.1fr) minmax(280px, 0.9fr);
+            gap: 24px;
+        }
+
+        .setup-card {
+            background: var(--panel);
+            border: 1px solid var(--panel-border);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(6px);
+            padding: 22px;
+        }
+
+        .setup-card h2,
+        .setup-card h3 {
+            margin-top: 0;
+        }
+
+        .setup-status-ok {
+            color: #7ff0b2;
+            font-weight: bold;
+        }
+
+        .setup-status-wait {
+            color: #ffd479;
+            font-weight: bold;
+        }
+
+        .board-toolbar {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin: 14px 0 18px;
+        }
+
+        .board-toolbar label {
+            margin: 0;
+            min-width: 150px;
+        }
+
+        .board-toolbar select {
+            width: auto;
+            min-width: 180px;
+        }
+
+        .ships {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 16px 0 18px;
+        }
+
         .ship-btn {
-            padding: 10px 12px; border-radius: 8px; border: 1px solid #cfd8e3;
-            background: white; cursor: pointer;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(157, 183, 211, 0.25);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text);
+            cursor: pointer;
+            font-weight: 700;
+            transition: transform .15s ease, background .2s ease, border-color .2s ease, opacity .2s ease;
         }
-        .ship-btn.selected { background: #0d6efd; color: white; }
-        .ship-btn.used { opacity: .5; text-decoration: line-through; }
-        .controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-        .status-ok { color: #198754; font-weight: bold; }
-        .status-wait { color: #a66b00; font-weight: bold; }
-        .message { padding: 10px 12px; border-radius: 8px; margin-top: 12px; background: #eef3f8; }
-        .error { background: #f8d7da; color: #842029; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
-        button { padding: 10px 16px; border: none; border-radius: 8px; cursor: pointer; }
-        .primary { background: #0d6efd; color: white; }
-        .secondary { background: #e9ecef; color: #222; }
-        ul { padding-left: 18px; }
+
+        .ship-btn:hover {
+            transform: translateY(-1px);
+            border-color: rgba(103, 187, 255, 0.45);
+        }
+
+        .ship-btn.selected {
+            background: var(--primary);
+            color: #04111d;
+            border-color: var(--primary);
+        }
+
+        .ship-btn.used {
+            opacity: .45;
+            text-decoration: line-through;
+        }
+
+        .board-wrap {
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(10, 38px);
+            gap: 4px;
+            margin-top: 10px;
+            min-width: max-content;
+        }
+
+        .cell {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            border: 1px solid rgba(157, 183, 211, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.06);
+            cursor: pointer;
+            user-select: none;
+            font-size: 11px;
+            color: var(--muted);
+            transition: background .2s ease, transform .1s ease, border-color .2s ease;
+        }
+
+        .cell:hover {
+            transform: scale(1.03);
+            border-color: rgba(103, 187, 255, 0.45);
+        }
+
+        .cell.ship {
+            background: var(--primary);
+            color: white;
+            border-color: rgba(255,255,255,.15);
+        }
+
+        .cell.preview {
+            background: #8ec5ff;
+            color: #04111d;
+        }
+
+        .cell.invalid {
+            background: #f8b4b4;
+            color: #5f1010;
+        }
+
+        .players-status > div,
+        .players-status p {
+            margin: 0 0 12px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(86, 170, 255, 0.18);
+        }
+
+        .setup-card ul {
+            color: var(--muted);
+            line-height: 1.7;
+            padding-left: 18px;
+        }
+
+        .setup-error {
+            margin-top: 16px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: var(--danger-bg);
+            border: 1px solid var(--danger-border);
+            color: var(--danger-text);
+            font-weight: 700;
+        }
+
+        .form-actions {
+            margin-top: 18px;
+        }
+
+        @media (max-width: 900px) {
+            .setup-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .setup-top,
+            .setup-card {
+                border-radius: 16px;
+                padding: 18px;
+            }
+
+            .setup-meta {
+                flex-direction: column;
+            }
+
+            .meta-pill {
+                border-radius: 12px;
+            }
+
+            .board-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .board-toolbar select,
+            .ship-btn,
+            .form-actions .btn {
+                width: 100%;
+            }
+
+            .board {
+                grid-template-columns: repeat(10, 34px);
+            }
+
+            .cell {
+                width: 34px;
+                height: 34px;
+                font-size: 10px;
+            }
+        }
     </style>
 </head>
 <body>
-<div class="container">
+<div class="page-shell">
 
-    <div class="card">
+    <div class="setup-top">
         <h1>Preparación de partida</h1>
-        <p><strong>Partida:</strong> <span th:text="${game.name}"></span></p>
-        <p><strong>Código:</strong> <span th:text="${game.code}"></span></p>
-        <p><strong>Estado:</strong> <span th:text="${game.status}"></span></p>
-        <div id="liveMessage" class="message">Conectando al canal en tiempo real...</div>
+        <p class="panel-subtitle" style="margin-bottom:0;">
+            Coloca tu flota y espera a que el rival también esté listo para comenzar la batalla.
+        </p>
+
+        <div class="setup-meta">
+            <div class="meta-pill">
+                <strong>Partida:</strong> <span th:text="${game.name}"></span>
+            </div>
+            <div class="meta-pill">
+                <strong>Código:</strong> <span th:text="${game.code}"></span>
+            </div>
+            <div class="meta-pill">
+                <strong>Estado:</strong> <span th:text="${game.status}"></span>
+            </div>
+        </div>
+
+        <div id="liveMessage" class="live-box">Conectando al canal en tiempo real...</div>
     </div>
 
-    <div class="layout">
-        <div class="card">
+    <div class="setup-layout">
+
+        <section class="setup-card">
             <h2>Tu tablero</h2>
-            <p th:if="${board.ready}" class="status-ok">Tu tablero ya está guardado. Esperando al otro jugador...</p>
-            <p th:unless="${board.ready}" class="status-wait">Aún no has guardado tu flota.</p>
-            <div class="controls">
-                <label>
-                    Orientación:
-                    <select id="orientation">
-                        <option value="HORIZONTAL">Horizontal</option>
-                        <option value="VERTICAL">Vertical</option>
-                    </select>
-                </label>
-                <button type="button" class="secondary" id="clearBoardBtn">Limpiar tablero</button>
+
+            <p th:if="${board.ready}" class="setup-status-ok">
+                Tu tablero ya está guardado. Esperando al otro jugador...
+            </p>
+            <p th:unless="${board.ready}" class="setup-status-wait">
+                Aún no has guardado tu flota.
+            </p>
+
+            <div class="board-toolbar">
+                <label for="orientation">Orientación</label>
+                <select id="orientation">
+                    <option value="HORIZONTAL">Horizontal</option>
+                    <option value="VERTICAL">Vertical</option>
+                </select>
+
+                <button type="button" class="btn btn-secondary" id="clearBoardBtn">Limpiar tablero</button>
             </div>
 
             <div class="ships" id="shipSelector"></div>
 
-            <div class="board" id="board"></div>
-
-            <form th:action="@{/games/{gameId}/setup(gameId=${game.id})}" method="post" id="setupForm" style="margin-top:16px;">
-                <input type="hidden" name="shipsJson" id="shipsJson">
-                <button type="submit" class="primary" id="saveBtn">Guardar colocación</button>
-            </form>
-
-            <div th:if="${error}" class="error" th:text="${error}"></div>
-        </div>
-
-        <div class="card">
-            <h2>Estado de jugadores</h2>
-            <div id="playersStatus">
-                <div th:each="b : ${boards}">
-                    <p th:attr="data-player-id=${b.player.id}">
-                        <strong th:text="${b.player.name}"></strong>:
-                        <span th:if="${b.ready}" class="status-ok player-state">Listo</span>
-                        <span th:unless="${b.ready}" class="status-wait player-state">Pendiente</span>
-                    </p>
-                </div>
+            <div class="board-wrap">
+                <div class="board" id="board"></div>
             </div>
 
-            <hr>
+            <form th:action="@{/games/{gameId}/setup(gameId=${game.id})}" method="post" id="setupForm" class="form-actions">
+                <input type="hidden" name="shipsJson" id="shipsJson">
+                <button type="submit" class="btn btn-primary" id="saveBtn">Guardar colocación</button>
+            </form>
 
-            <h3>Flota obligatoria</h3>
-            <ul>
-                <li>1 barco grande de 4 celdas</li>
-                <li>2 barcos medianos de 2 celdas</li>
-                <li>3 barcos pequeños de 1 celda</li>
-            </ul>
+            <div th:if="${error}" class="setup-error" th:text="${error}"></div>
+        </section>
 
-            <h3>Instrucciones</h3>
-            <ul>
-                <li>Selecciona un barco pendiente</li>
-                <li>Elige orientación si procede</li>
-                <li>Haz click en la casilla inicial</li>
-                <li>Cuando completes la flota, pulsa Guardar</li>
-            </ul>
-        </div>
+        <section class="setup-card">
+            <div class="hero-content">
+                <span class="kicker">Centro táctico</span>
+                <h2 class="panel-title" style="margin-top:0;">Estado de jugadores</h2>
+
+                <div id="playersStatus" class="players-status">
+                    <div th:each="b : ${boards}" th:attr="data-player-id=${b.player.id}">
+                        <strong th:text="${b.player.name}"></strong>:
+                        <span th:if="${b.ready}" class="setup-status-ok player-state">Listo</span>
+                        <span th:unless="${b.ready}" class="setup-status-wait player-state">Pendiente</span>
+                    </div>
+                </div>
+
+                <hr style="margin:20px 0; opacity:.2">
+
+                <h3>Flota obligatoria</h3>
+                <ul>
+                    <li>1 barco grande de 4 celdas</li>
+                    <li>2 barcos medianos de 2 celdas</li>
+                    <li>3 barcos pequeños de 1 celda</li>
+                </ul>
+
+                <h3>Instrucciones</h3>
+                <ul>
+                    <li>Selecciona un barco pendiente</li>
+                    <li>Elige orientación si procede</li>
+                    <li>Haz click en la casilla inicial</li>
+                    <li>Cuando completes la flota, pulsa Guardar</li>
+                </ul>
+
+                <div class="radar-box">
+                    <div class="radar-sweep"></div>
+                    <div class="radar-dot dot-1"></div>
+                    <div class="radar-dot dot-2"></div>
+                    <div class="radar-dot dot-3"></div>
+                </div>
+            </div>
+        </section>
+
     </div>
 </div>
 
@@ -328,7 +575,7 @@
         if (!state) return;
 
         state.textContent = 'Listo';
-        state.className = 'status-ok player-state';
+        state.className = 'setup-status-ok player-state';
     }
 </script>
 </body>

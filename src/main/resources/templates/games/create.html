@@ -2,32 +2,59 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
-  <title>Crear partida</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 30px; background: #f5f6fa; }
-    .card { max-width: 500px; margin: auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
-    .field { margin-bottom: 15px; }
-    label { display: block; margin-bottom: 6px; }
-    input { width: 100%; padding: 10px; box-sizing: border-box; }
-    .error { color: #c62828; font-size: 14px; margin-top: 4px; }
-    .btn { padding: 10px 14px; border: none; border-radius: 6px; cursor: pointer; }
-    .btn-primary { background: #0d6efd; color: white; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crear partida | Battle Naval</title>
+  <link rel="stylesheet" th:href="@{/css/game-battleship.css}">
 </head>
 <body>
 
-<div class="card">
-  <h1>Crear partida</h1>
+<div class="page-shell">
+  <div class="page-layout">
 
-  <form th:action="@{/games/create}" th:object="${createGameDto}" method="post">
-    <div class="field">
-      <label for="name">Nombre de la partida</label>
-      <input type="text" id="name" th:field="*{name}">
-      <div class="error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
-    </div>
+    <section class="hero-panel">
+      <div class="hero-content">
+        <span class="kicker">Centro de mando</span>
+        <h1 class="hero-title">Prepara una nueva batalla</h1>
+        <p class="hero-text">
+          Crea una partida, comparte el código con otro jugador y comienza el despliegue
+          de tu flota sobre el tablero.
+        </p>
 
-    <button type="submit" class="btn btn-primary">Crear partida</button>
-  </form>
+        <ul class="hero-points">
+          <li>Asigna un nombre reconocible a la partida</li>
+          <li>Comparte el código con tu rival</li>
+          <li>Continúa con la colocación de barcos</li>
+        </ul>
+
+        <div class="radar-box">
+          <div class="radar-sweep"></div>
+          <div class="radar-dot dot-1"></div>
+          <div class="radar-dot dot-2"></div>
+          <div class="radar-dot dot-3"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-panel">
+      <h1 class="panel-title">Crear partida</h1>
+      <p class="panel-subtitle">Introduce el nombre con el que identificarás esta nueva misión.</p>
+
+      <form th:action="@{/games/create}" th:object="${createGameDto}" method="post">
+        <div class="field">
+          <label for="name">Nombre de la partida</label>
+          <input type="text" id="name" th:field="*{name}" placeholder="Ej. Batalla del Atlántico">
+          <div class="error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Crear partida</button>
+      </form>
+
+      <div class="bottom-links">
+        <a th:href="@{/games}">← Volver al lobby</a>
+      </div>
+    </section>
+
+  </div>
 </div>
 
 </body>

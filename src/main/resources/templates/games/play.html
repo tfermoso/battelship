@@ -2,50 +2,151 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Jugar partida</title>
+    <title>Jugar partida | Battle Naval</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" th:href="@{/css/game-battleship.css}">
+
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+        .play-top {
+            margin-bottom: 24px;
+            padding: 22px;
+            border: 1px solid var(--panel-border);
+            border-radius: 20px;
+            background: var(--panel);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(6px);
+        }
+
+        .play-top h1 {
+            margin: 0 0 12px;
+            font-size: clamp(1.9rem, 3vw, 2.4rem);
+        }
+
+        .play-meta {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+
+        .meta-pill {
+            padding: 10px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(61, 169, 252, 0.22);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .play-status {
+            margin-top: 16px;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .live-box {
+            margin-top: 16px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: rgba(61, 169, 252, 0.12);
+            border: 1px solid rgba(61, 169, 252, 0.22);
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .flash-ok {
+            margin-top: 16px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: rgba(61, 220, 151, 0.14);
+            border: 1px solid rgba(61, 220, 151, 0.35);
+            color: #d8ffe9;
+            font-weight: 700;
+        }
+
+        .flash-error {
+            margin-top: 16px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: var(--danger-bg);
+            border: 1px solid var(--danger-border);
+            color: var(--danger-text);
+            font-weight: 700;
+        }
+
+        .play-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
         }
 
         .boards {
-            display: flex;
-            gap: 40px;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(320px, 1fr));
+            gap: 24px;
         }
 
-        .board-container {
-            min-width: 320px;
+        .board-card {
+            background: var(--panel);
+            border: 1px solid var(--panel-border);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(6px);
+            padding: 22px;
+        }
+
+        .board-card h2 {
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
+
+        .board-subtitle {
+            margin: 0 0 16px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .board-wrap {
+            overflow-x: auto;
+            padding-bottom: 8px;
         }
 
         .board {
             display: grid;
-            grid-template-columns: repeat(10, 32px);
-            gap: 2px;
-            margin-top: 10px;
+            grid-template-columns: repeat(10, 34px);
+            gap: 4px;
+            min-width: max-content;
         }
 
-        .cell {
-            width: 32px;
-            height: 32px;
-            border: 1px solid #999;
+        .cell,
+        .enemy-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            border: 1px solid rgba(157, 183, 211, 0.25);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
         }
 
+        .cell {
+            user-select: none;
+        }
+
         .water {
-            background: #e7f3ff;
+            background: #d9ecff;
             color: #2b4c7e;
         }
 
         .ship {
-            background: #9ca3af;
-            color: #111827;
+            background: #7b8794;
+            color: white;
         }
 
         .hit {
@@ -69,16 +170,16 @@
         }
 
         .enemy-btn {
-            width: 32px;
-            height: 32px;
-            border: 1px solid #999;
             cursor: pointer;
             background: #dbeafe;
-            font-weight: bold;
+            color: #1d4ed8;
+            transition: transform .12s ease, background .2s ease, border-color .2s ease;
         }
 
         .enemy-btn:hover {
             background: #bfdbfe;
+            border-color: rgba(103, 187, 255, 0.45);
+            transform: scale(1.03);
         }
 
         .enemy-btn:disabled {
@@ -86,117 +187,239 @@
             opacity: 0.8;
         }
 
-        .msg-ok {
-            color: green;
-            font-weight: bold;
+        .legend-card {
+            background: var(--panel);
+            border: 1px solid var(--panel-border);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(6px);
+            padding: 20px 22px;
         }
 
-        .msg-error {
-            color: red;
-            font-weight: bold;
+        .legend-card h3 {
+            margin-top: 0;
+            margin-bottom: 14px;
         }
 
-        .msg-info {
-            background: #eef6ff;
-            border: 1px solid #99c2ff;
-            padding: 10px;
-            margin: 15px 0;
-            font-weight: bold;
+        .legend {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
         }
 
-        .legend span {
-            margin-right: 14px;
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(86, 170, 255, 0.18);
+            color: var(--text);
+        }
+
+        .legend-box {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: 1px solid rgba(157, 183, 211, 0.25);
+        }
+
+        .legend-water { background: #d9ecff; }
+        .legend-ship { background: #7b8794; }
+        .legend-hit { background: #f59e0b; }
+        .legend-sunk { background: #111111; }
+        .legend-miss { background: #ffffff; }
+
+        .back-link {
+            margin-top: 18px;
+            text-align: center;
+        }
+
+        .back-link a {
+            color: #9ad3ff;
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 900px) {
+            .boards {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .play-top,
+            .board-card,
+            .legend-card {
+                border-radius: 16px;
+                padding: 18px;
+            }
+
+            .play-meta {
+                flex-direction: column;
+            }
+
+            .meta-pill {
+                border-radius: 12px;
+            }
+
+            .board {
+                grid-template-columns: repeat(10, 30px);
+            }
+
+            .cell,
+            .enemy-btn {
+                width: 30px;
+                height: 30px;
+                font-size: 12px;
+            }
         }
     </style>
 </head>
 <body>
 
-<h1 th:text="'Partida: ' + ${game.name}"></h1>
+<div class="page-shell">
 
-<p><strong>Estado:</strong> <span th:text="${game.status}"></span></p>
-<p><strong>Rival:</strong> <span th:text="${opponent.name}"></span></p>
+    <div class="play-top">
+        <h1 th:text="'Partida: ' + ${game.name}"></h1>
 
-<p th:if="${winner != null}">
-    <strong>Ganador:</strong> <span th:text="${winner.name}"></span>
-</p>
-
-<p th:if="${winner == null}">
-    <strong>Turno:</strong>
-    <span th:text="${isMyTurn} ? 'Te toca a ti' : 'Turno del rival'"></span>
-</p>
-
-<p class="msg-ok" th:if="${success}" th:text="${success}"></p>
-<p class="msg-error" th:if="${error}" th:text="${error}"></p>
-
-<div id="ws-message" class="msg-info" style="display:none;"></div>
-
-<div class="boards">
-
-    <div class="board-container">
-        <h2>Tu tablero</h2>
-        <div class="board">
-            <th:block th:each="row : ${myBoard}">
-                <th:block th:each="cell : ${row}">
-                    <div class="cell"
-                         th:classappend="
-                            ${cell == 'W'} ? 'water' :
-                            (${cell == 'S'} ? 'ship' :
-                            (${cell == 'H'} ? 'hit' :
-                            (${cell == 'X'} ? 'sunk' :
-                            (${cell == 'M'} ? 'miss' : 'unknown'))))">
-                        <span th:text="${cell}"></span>
-                    </div>
-                </th:block>
-            </th:block>
+        <div class="play-meta">
+            <div class="meta-pill">
+                <strong>Estado:</strong> <span th:text="${game.status}"></span>
+            </div>
+            <div class="meta-pill">
+                <strong>Rival:</strong> <span th:text="${opponent.name}"></span>
+            </div>
+            <div th:if="${winner != null}" class="meta-pill">
+                <strong>Ganador:</strong> <span th:text="${winner.name}"></span>
+            </div>
+            <div th:if="${winner == null}" class="meta-pill">
+                <strong>Turno:</strong>
+                <span th:text="${isMyTurn} ? 'Te toca a ti' : 'Turno del rival'"></span>
+            </div>
         </div>
+
+        <div class="play-status">
+            Mantén abierta esta pantalla para recibir actualizaciones en tiempo real del combate.
+        </div>
+
+        <p class="flash-ok" th:if="${success}" th:text="${success}"></p>
+        <p class="flash-error" th:if="${error}" th:text="${error}"></p>
+
+        <div id="ws-message" class="live-box" style="display:none;"></div>
     </div>
 
-    <div class="board-container">
-        <h2>Tablero enemigo</h2>
-        <div class="board">
-            <th:block th:each="row, rowStat : ${enemyBoard}">
-                <th:block th:each="cell, colStat : ${row}">
+    <div class="play-layout">
 
-                    <form th:if="${cell == '?' and isMyTurn and winner == null}"
-                          th:action="@{/games/{id}/play/shoot(id=${game.id})}"
-                          method="post"
-                          style="margin:0;">
-                        <input type="hidden" name="x" th:value="${rowStat.index}">
-                        <input type="hidden" name="y" th:value="${colStat.index}">
-                        <button type="submit" class="enemy-btn">?</button>
-                    </form>
+        <div class="boards">
 
-                    <div th:if="${!(cell == '?' and isMyTurn and winner == null)}"
-                         class="cell"
-                         th:classappend="
-                            ${cell == '?'} ? 'unknown' :
-                            (${cell == 'H'} ? 'hit' :
-                            (${cell == 'X'} ? 'sunk' :
-                            (${cell == 'M'} ? 'miss' : 'unknown')))">
-                        <span th:text="${cell}"></span>
+            <section class="board-card">
+                <div class="hero-content">
+                    <span class="kicker">Defensa</span>
+                    <h2>Tu tablero</h2>
+                    <p class="board-subtitle">
+                        Aquí puedes ver tu flota, los impactos recibidos y los barcos hundidos.
+                    </p>
+                </div>
+
+                <div class="board-wrap">
+                    <div class="board">
+                        <th:block th:each="row : ${myBoard}">
+                            <th:block th:each="cell : ${row}">
+                                <div class="cell"
+                                     th:classappend="
+                                        ${cell == 'W'} ? 'water' :
+                                        (${cell == 'S'} ? 'ship' :
+                                        (${cell == 'H'} ? 'hit' :
+                                        (${cell == 'X'} ? 'sunk' :
+                                        (${cell == 'M'} ? 'miss' : 'unknown'))))">
+                                    <span th:text="${cell}"></span>
+                                </div>
+                            </th:block>
+                        </th:block>
                     </div>
+                </div>
+            </section>
 
-                </th:block>
-            </th:block>
+            <section class="board-card">
+                <div class="hero-content">
+                    <span class="kicker">Ataque</span>
+                    <h2>Tablero enemigo</h2>
+                    <p class="board-subtitle">
+                        Selecciona una casilla para disparar cuando sea tu turno.
+                    </p>
+                </div>
+
+                <div class="board-wrap">
+                    <div class="board">
+                        <th:block th:each="row, rowStat : ${enemyBoard}">
+                            <th:block th:each="cell, colStat : ${row}">
+
+                                <form th:if="${cell == '?' and isMyTurn and winner == null}"
+                                      th:action="@{/games/{id}/play/shoot(id=${game.id})}"
+                                      method="post"
+                                      style="margin:0;">
+                                    <input type="hidden" name="x" th:value="${rowStat.index}">
+                                    <input type="hidden" name="y" th:value="${colStat.index}">
+                                    <button type="submit" class="enemy-btn">?</button>
+                                </form>
+
+                                <div th:if="${!(cell == '?' and isMyTurn and winner == null)}"
+                                     class="cell"
+                                     th:classappend="
+                                        ${cell == '?'} ? 'unknown' :
+                                        (${cell == 'H'} ? 'hit' :
+                                        (${cell == 'X'} ? 'sunk' :
+                                        (${cell == 'M'} ? 'miss' : 'unknown')))">
+                                    <span th:text="${cell}"></span>
+                                </div>
+
+                            </th:block>
+                        </th:block>
+                    </div>
+                </div>
+            </section>
+
         </div>
+
+        <section class="legend-card">
+            <h3>Leyenda</h3>
+            <div class="legend">
+                <div class="legend-item">
+                    <span class="legend-box legend-ship"></span>
+                    <span>S = barco</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-box legend-hit"></span>
+                    <span>H = tocado</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-box legend-sunk"></span>
+                    <span>X = hundido</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-box legend-miss"></span>
+                    <span>M = agua</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-box legend-water"></span>
+                    <span>W = agua propia</span>
+                </div>
+            </div>
+
+            <div class="back-link">
+                <a th:href="@{/games}">← Volver al lobby</a>
+            </div>
+        </section>
+
     </div>
 
 </div>
-
-<div class="legend" style="margin-top: 20px;">
-    <strong>Leyenda:</strong>
-    <span>S = barco</span>
-    <span>H = tocado</span>
-    <span>X = hundido</span>
-    <span>M = agua</span>
-</div>
-
-<p style="margin-top: 20px;">
-    <a th:href="@{/games}">Volver al listado</a>
-</p>
-
-<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 
 <script th:inline="javascript">
     const gameId = [[${game.id}]];

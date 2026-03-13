@@ -2,58 +2,114 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
-  <title>Sala de espera</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sala de espera | Battle Naval</title>
+
   <meta http-equiv="refresh" content="5">
-  <style>
-    body { font-family: Arial, sans-serif; margin: 30px; background: #f5f6fa; }
-    .card { max-width: 700px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
-    .badge { display: inline-block; padding: 6px 10px; border-radius: 20px; background: #e9ecef; margin-left: 10px; }
-    .ok { color: green; font-weight: bold; }
-    .waiting { color: #b26a00; font-weight: bold; }
-  </style>
+
+  <link rel="stylesheet" th:href="@{/css/game-battleship.css}">
 </head>
 <body>
 
-<div class="card">
-  <h1>Sala de espera</h1>
+<div class="page-shell">
 
-  <p><strong>Partida:</strong> <span th:text="${game.name}"></span></p>
-  <p><strong>Código:</strong> <span th:text="${game.code}"></span></p>
-  <p>
-    <strong>Estado:</strong>
-    <span class="badge" th:text="${game.status}"></span>
-  </p>
+  <div class="page-layout">
 
-  <hr>
+    <!-- Panel izquierdo -->
+    <section class="hero-panel">
+      <div class="hero-content">
 
-  <h3>Jugadores</h3>
+        <span class="kicker">Sala de espera</span>
 
-  <p>
-    <strong>Jugador 1:</strong>
-    <span th:text="${game.player1.name}"></span>
-    <span th:if="${isPlayer1}" class="ok">(Tú)</span>
-  </p>
+        <h1 class="hero-title">Esperando rival</h1>
 
-  <p>
-    <strong>Jugador 2:</strong>
-    <span th:if="${game.player2 != null}" th:text="${game.player2.name}"></span>
-    <span th:if="${game.player2 == null}" class="waiting">Esperando jugador...</span>
-    <span th:if="${isPlayer2}" class="ok">(Tú)</span>
-  </p>
+        <p class="hero-text">
+          Comparte el código de la partida con otro jugador para comenzar la batalla.
+          Cuando ambos jugadores estén listos podrás colocar tu flota.
+        </p>
 
-  <hr>
+        <ul class="hero-points">
+          <li>Comparte el código de la partida</li>
+          <li>El segundo jugador debe unirse</li>
+          <li>Después podrás colocar los barcos</li>
+        </ul>
 
-  <div th:if="${game.player2 == null}">
-    <p class="waiting">La partida todavía no está completa. Esta página se actualiza automáticamente.</p>
+        <div class="radar-box">
+          <div class="radar-sweep"></div>
+          <div class="radar-dot dot-1"></div>
+          <div class="radar-dot dot-2"></div>
+          <div class="radar-dot dot-3"></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Panel derecho -->
+    <section class="content-panel">
+
+      <h2 class="panel-title">Sala de espera</h2>
+      <p class="panel-subtitle">
+        La página se actualiza automáticamente mientras esperamos al segundo jugador.
+      </p>
+
+      <div class="field">
+        <label>Partida</label>
+        <input type="text" th:value="${game.name}" readonly>
+      </div>
+
+      <div class="field">
+        <label>Código de partida</label>
+        <input type="text" th:value="${game.code}" readonly>
+      </div>
+
+      <div class="field">
+        <label>Estado</label>
+        <input type="text" th:value="${game.status}" readonly>
+      </div>
+
+      <hr style="margin:20px 0; opacity:.2">
+
+      <h3>Jugadores</h3>
+
+      <div class="field">
+        <label>Jugador 1</label>
+        <input type="text"
+               th:value="${game.player1.name + (isPlayer1 ? ' (Tú)' : '')}"
+               readonly>
+      </div>
+
+      <div class="field">
+        <label>Jugador 2</label>
+
+        <input
+                th:if="${game.player2 != null}"
+                type="text"
+                th:value="${game.player2.name + (isPlayer2 ? ' (Tú)' : '')}"
+                readonly>
+
+        <input
+                th:if="${game.player2 == null}"
+                type="text"
+                value="Esperando jugador..."
+                readonly>
+      </div>
+
+      <div th:if="${game.player2 == null}" class="bottom-links">
+        ⏳ Esperando a que otro jugador se una a la partida...
+      </div>
+
+      <div th:if="${game.player2 != null}" class="bottom-links">
+        ⚓ La partida ya tiene dos jugadores. El siguiente paso será colocar los barcos.
+      </div>
+
+      <div class="bottom-links" style="margin-top:25px;">
+        <a th:href="@{/games}">← Volver al lobby</a>
+      </div>
+
+    </section>
+
   </div>
 
-  <div th:if="${game.player2 != null}">
-    <p class="ok">La partida ya tiene dos jugadores. El siguiente paso será la colocación de barcos.</p>
-  </div>
-
-  <p>
-    <a th:href="@{/games}">Volver al listado</a>
-  </p>
 </div>
 
 </body>
